@@ -2,37 +2,35 @@
   "Example tasks showing various approaches."
   {:boot/export-tasks true}
   (:require [boot.core :as boot :refer [deftask]]
-            [boot.util :as util]))
+            [boot.util :as util]
+            [boot.pod :as pod]
+            [clojure.tools.namespace.dir :as dir]
+            [clojure.tools.namespace.move :as move]
+            [clojure.tools.namespace.track :as track]))
 
-(deftask simple
-  "I'm a simple task with only setup."
-  [A arg ARG str "the task argument"]
-  ;; merge environment etc
-  (println "Simple task setup:" arg)
-  identity)
+(defn prefixed-ns [prefix ns]
+  (symbol (str prefix "." ns)))
 
-(deftask pre
+(deftask source-deps
   "I'm a pre-wrap task."
-  []
-  ;; merge environment etc
-  (println "Pre-wrap task setup.")
-  (boot/with-pre-wrap fs
-    (println "Pre-wrap: Run functions on fs. Next task will run with our result.")
-    ;; return updated filesystem (boot/commit! updated-fs)
-    fs))
-
-(deftask post
-  "I'm a post-wrap task."
-  []
-  ;; merge environment etc
-  (println "Post-wrap task setup.")
-  (boot/with-post-wrap fs
-    (println "Post-wrap: Next task will run. Then we will run functions on its result (fs).")))
-
-(deftask pass-thru
-  "I'm a pass-thru task."
-  []
-  ;; merge environment etc
-  (println "Pass-thru task setup.")
-  (boot/with-pass-thru fs
-    (println "Pass-thru: Run functions on filesystem (fs). Next task will run with the same fs.")))
+  [p prefix PRE sym "The string to prefix vendored nses with."]
+  (let [version "0.1.0"
+        prefix (or prefix (str "neo-" version))
+        tgt (boot/tmp-dir!)
+        vendor? #(= "source" (:scope (util/dep-as-map %)))
+        jars (-> (boot/get-env)
+                 (update-in [:dependencies] (partial filter vendor?))
+                 (pod/resolve-dependency-jars true))
+        jars (remove #(.endsWith (.getName %) ".pom") jars)]
+    (doseq [jar jars]
+      (pod/unpack-jar jar tgt))
+    (let [tracker (-> (track/tracker)
+                      (dir/scan tgt))
+          nses (:clojure.tools.namespace.track/unload tracker)]
+      (doseq [ns nses]
+        (let [new-ns (prefixed-ns prefix ns)]
+          (move/move-ns ns new-ns tgt [tgt]))))
+    (boot/with-pre-wrap [fs]
+      (-> fs
+          (boot/add-resource tgt)
+          boot/commit!))))
