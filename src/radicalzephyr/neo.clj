@@ -4,6 +4,7 @@
   (:require [boot.core :as boot :refer [deftask]]
             [boot.util :as util]
             [boot.pod :as pod]
+            [boot.from.digest :as digest]
             [clojure.tools.namespace.dir :as dir]
             [clojure.tools.namespace.move :as move]
             [clojure.tools.namespace.track :as track]))
@@ -21,16 +22,22 @@
         jars (-> (boot/get-env)
                  (update-in [:dependencies] (partial filter vendor?))
                  (pod/resolve-dependency-jars true))
-        jars (remove #(.endsWith (.getName %) ".pom") jars)]
-    (doseq [jar jars]
-      (pod/unpack-jar jar tgt))
-    (let [tracker (-> (track/tracker)
-                      (dir/scan tgt))
-          nses (:clojure.tools.namespace.track/unload tracker)]
-      (doseq [ns nses]
-        (let [new-ns (prefixed-ns prefix ns)]
-          (move/move-ns ns new-ns tgt [tgt]))))
+        jars (remove #(.endsWith (.getName %) ".pom") jars)
+        vendor-jar (fn [jar tgt]
+                     (pod/unpack-jar jar tgt)
+                     (let [tracker (-> (track/tracker)
+                                       (dir/scan tgt))
+                           nses (:clojure.tools.namespace.track/unload tracker)]
+                       (doseq [ns nses]
+                         (let [new-ns (prefixed-ns prefix ns)]
+                           (move/move-ns ns new-ns tgt [tgt])))))
+        include #{}
+        exclude #{#"(?i)^META-INF/" #"(?i)pom.xml$"}
+        mergers pod/standard-jar-mergers
+        reducer (fn [fs jar]
+                  (boot/add-cached-resource
+                   fs (digest/md5 jar) (partial vendor-jar jar)
+                   :include include :exclude exclude :mergers mergers))]
+
     (boot/with-pre-wrap [fs]
-      (-> fs
-          (boot/add-resource tgt)
-          boot/commit!))))
+      (boot/commit! (reduce reducer fs jars)))))
