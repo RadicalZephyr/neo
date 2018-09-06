@@ -6,7 +6,7 @@
           :dependencies   '[[org.clojure/clojure "RELEASE"]
                             [boot/core "RELEASE" :scope "test"]
                             [adzerk/boot-test "RELEASE" :scope "test"]
-                            [org.clojure/tools.namespace "0.2.11"]])
+                            [org.clojure/tools.namespace "0.2.11" :scope "source"]])
 
 (require '[adzerk.boot-test :refer [test]])
 

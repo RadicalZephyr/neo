@@ -5,9 +5,9 @@
             [boot.util :as util]
             [boot.pod :as pod]
             [boot.from.digest :as digest]
-            [clojure.tools.namespace.dir :as dir]
-            [clojure.tools.namespace.move :as move]
-            [clojure.tools.namespace.track :as track]))
+            [radicalzephyr.from.clojure.tools.namespace.dir :as dir]
+            [radicalzephyr.from.clojure.tools.namespace.move :as move]
+            [radicalzephyr.from.clojure.tools.namespace.track :as track]))
 
 (defn prefixed-ns [prefix ns]
   (symbol (str prefix "." ns)))
