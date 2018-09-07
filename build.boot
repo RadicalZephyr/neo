@@ -13,9 +13,9 @@
 (task-options!
  pom {:project     project
       :version     version
-      :description "FIXME: write description"
-      :url         "http://example/FIXME"
-      :scm         {:url "https://github.com/yourname/radicalzephyr.neo"}
+      :description "A Boot task to include dependencies as source code."
+      :url         "https://github.com/RadicalZephyr/neo"
+      :scm         {:url "https://github.com/RadicalZephyr/neo"}
       :license     {"Eclipse Public License"
                     "http://www.eclipse.org/legal/epl-v10.html"}})
 
