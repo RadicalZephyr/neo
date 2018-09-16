@@ -1,5 +1,4 @@
 (ns radicalzephyr.neo
-  "Example tasks showing various approaches."
   {:boot/export-tasks true}
   (:require [boot.core :as boot :refer [deftask]]
             [boot.util :as util]
@@ -13,7 +12,8 @@
   (symbol (str prefix "." ns)))
 
 (deftask source-deps
-  "I'm a pre-wrap task."
+  "Re-namespace dependencies and include their source in your own
+  distribution."
   [p prefix PRE sym "The string to prefix vendored nses with."]
   (let [version "0.1.0"
         prefix (or prefix (str "neo-" version))
